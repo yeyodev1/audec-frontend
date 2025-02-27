@@ -1,0 +1,22 @@
+//colors
+@use './colorVariables' as *;
+// font-family
+@use './fonts' as *;
+//externalVariables
+@use './externalVariables' as *;
+
+* {
+  margin: 0;
+  box-sizing: border-box;
+  font-family: $font;
+}
+
+body {
+  margin: 0;
+  background-color: red;
+}
+
+p, h2, h3, h4, h5, h6, a{
+  color: $black;
+  font-family: $font;
+}
