@@ -8,10 +8,6 @@
   </div>
 </template>
 
-<style lang="scss">
-@use '@/styles/_styles.scss' as *;
-</style>
-
 <style lang="scss" scoped>
 .app-container {
   min-height: 100vh;
