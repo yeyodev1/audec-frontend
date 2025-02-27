@@ -1,5 +1,6 @@
 <script setup lang="ts">
 import photoTeam from '@/static/enterprise/team.avif'
+import offices from '@/static/enterprise/offices.jpeg'
 </script>
 
 <template>
