@@ -4,6 +4,6 @@
 <template>
   <div>
     <GlobalTheHero/>
-    
+    <GlobalTheSelectorCars/>
   </div>
 </template>
