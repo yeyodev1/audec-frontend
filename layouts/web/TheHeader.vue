@@ -52,6 +52,7 @@ onUnmounted(() => {
 <style lang="scss" scoped>
   .container {
     background-color: $black;
+    border-bottom: 1px solid $greyLight;
     .header {
     display: flex;
     align-items: center;
@@ -59,7 +60,6 @@ onUnmounted(() => {
     padding: 1rem;
     margin: 0 auto;
 
-    border-bottom: 1px solid $greyLight;
     max-width: 1440px;
     &-container {
       display: flex;

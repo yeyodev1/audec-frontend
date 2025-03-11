@@ -4,5 +4,6 @@
 <template>
   <div>
     <GlobalTheHero/>
+    
   </div>
 </template>
