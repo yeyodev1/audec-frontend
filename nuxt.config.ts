@@ -11,6 +11,10 @@ export default defineNuxtConfig({
       preprocessorOptions: {
         scss: {
           additionalData: `
+            @use '@fortawesome/fontawesome-free/scss/fontawesome.scss';
+            @use '@fortawesome/fontawesome-free/scss/solid.scss';
+            @use '@fortawesome/fontawesome-free/scss/regular.scss';
+            @use '@fortawesome/fontawesome-free/scss/brands.scss';
             @use '@/styles/_styles.scss' as *;
             @use '@/styles/colorVariables' as *;
             @use '@/styles/fonts' as *;
