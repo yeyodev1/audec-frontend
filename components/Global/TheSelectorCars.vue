@@ -1,32 +1,28 @@
 <script setup>
-import { ref } from 'vue';
+import { ref, computed } from 'vue';
+import { useCarBrandsStore } from '~/store/CarBrandsStore';
 
-const vehicles = [
-  {
-    id: 1,
-    name: 'Sedan Luxury',
-    image: 'https://images.unsplash.com/photo-1550355291-bbee04a92027?q=80&w=1936&auto=format&fit=crop',
-    price: '$35,000'
-  },
-  {
-    id: 2,
-    name: 'SUV Premium',
-    image: 'https://images.unsplash.com/photo-1533473359331-0135ef1b58bf?q=80&w=1470&auto=format&fit=crop',
-    price: '$45,000'
-  },
-  {
-    id: 3,
-    name: 'Sports Coupe',
-    image: 'https://images.unsplash.com/photo-1552519507-da3b142c6e3d?q=80&w=1470&auto=format&fit=crop',
-    price: '$60,000'
-  },
-  {
-    id: 4,
-    name: 'Electric Model',
-    image: 'https://images.unsplash.com/photo-1617788138017-80ad40651399?q=80&w=1470&auto=format&fit=crop',
-    price: '$55,000'
-  },
-];
+
+const carBrandsStore = useCarBrandsStore();
+
+const vehicles = computed(() => {
+  const allModels = [];
+  
+  carBrandsStore.brands.forEach(brand => {
+    brand.models.forEach(model => {
+      allModels.push({
+        id: model.id,
+        name: model.name,
+        image: model.imageUrl,
+        price: `$${model.price.toLocaleString()}`,
+        brand: brand.name
+      });
+    });
+  });
+  
+  return allModels;
+});
+
 
 const scrollContainer = ref(null);
 
@@ -41,6 +37,10 @@ const scrollRight = () => {
     scrollContainer.value.scrollBy({ left: 300, behavior: 'smooth' });
   }
 };
+
+onMounted(async () => {
+  console.log('vehicles: ', vehicles)
+})
 </script>
 
 <template>
@@ -62,6 +62,7 @@ const scrollRight = () => {
             <img :src="vehicle.image" :alt="vehicle.name" class="vehicle-card__image">
           </div>
           <div class="vehicle-card__info">
+            <span class="vehicle-card__brand">{{ vehicle.brand }}</span>
             <h3 class="vehicle-card__name">{{ vehicle.name }}</h3>
             <p class="vehicle-card__price">{{ vehicle.price }}</p>
           </div>
@@ -152,6 +153,7 @@ const scrollRight = () => {
   transition: transform 0.3s ease, box-shadow 0.3s ease;
   background-color: $white;
   flex: 0 0 auto;
+  box-shadow: 0 4px 8px rgba($black, 0.1);
 
   &:hover {
     transform: translateY(-8px);
@@ -175,6 +177,14 @@ const scrollRight = () => {
 
   &__info {
     padding: 1rem;
+  }
+  
+  &__brand {
+    display: block;
+    font-size: 0.85rem;
+    color: #666;
+    margin-bottom: 0.25rem;
+    text-transform: uppercase;
   }
 
   &__name {
@@ -203,4 +213,4 @@ const scrollRight = () => {
     }
   }
 }
-</style>
+</style>~/store/CarBrandsStore
