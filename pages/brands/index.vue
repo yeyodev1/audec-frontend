@@ -42,7 +42,7 @@ onMounted(async () => {
           <p class="brand-country">{{ brand.country }}</p>
           <p class="brand-models">{{ brand.models.length }} modelos</p>
         </div>
-        <nuxt-link :to="`/brands/${brand.id}`" class="brand-link">
+        <nuxt-link :to="`/brands/${brand.name}`" class="brand-link">
           Ver modelos
           <i class="fa-solid fa-arrow-right"></i>
         </nuxt-link>

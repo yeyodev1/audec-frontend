@@ -1,18 +1,24 @@
 import { defineStore } from 'pinia'
+import BrandsService from '@/api/brands.service'
 
+// Update interfaces to match the data structure from BrandsService
 interface CarModel {
-  id: string
+  id: number | string
   name: string
-  year: number
-  price: number
+  slug: string
   imageUrl: string
+  year: string | number
+  description?: string
+  price?: number
 }
 
 interface CarBrand {
-  id: string
+  id: number | string
   name: string
-  logo: string
+  slug: string
+  imageUrl: string // Changed from logo to match BrandsService
   country: string
+  description?: string
   models: CarModel[]
 }
 
@@ -33,131 +39,8 @@ interface RootState {
 
 export const useCarBrandsStore = defineStore('CarBrandsStore', {
   state: (): RootState => ({
-    brands: [
-      {
-        id: '1',
-        name: 'Toyota',
-        logo: 'https://www.carlogos.org/car-logos/toyota-logo-2019-1350x1500.png',
-        country: 'Japan',
-        models: [
-          { 
-            id: '101', 
-            name: 'Corolla', 
-            year: 2023, 
-            price: 25000,
-            imageUrl: 'https://images.unsplash.com/photo-1623869675781-80aa31012a5a?q=80&w=1974&auto=format&fit=crop' 
-          },
-          { 
-            id: '102', 
-            name: 'Camry', 
-            year: 2023, 
-            price: 30000,
-            imageUrl: 'https://images.unsplash.com/photo-1621007947382-bb3c3994e3fb?q=80&w=1974&auto=format&fit=crop' 
-          },
-          { 
-            id: '103', 
-            name: 'RAV4', 
-            year: 2023, 
-            price: 32000,
-            imageUrl: 'https://images.unsplash.com/photo-1581540222194-0def2dda95b8?q=80&w=1974&auto=format&fit=crop' 
-          }
-        ]
-      },
-      {
-        id: '2',
-        name: 'Honda',
-        logo: 'https://www.carlogos.org/car-logos/honda-logo-2000-1920x1080.png',
-        country: 'Japan',
-        models: [
-          { 
-            id: '201', 
-            name: 'Civic', 
-            year: 2023, 
-            price: 26000,
-            imageUrl: 'https://images.unsplash.com/photo-1606152421802-db97b9c7a11b?q=80&w=1974&auto=format&fit=crop' 
-          },
-          { 
-            id: '202', 
-            name: 'Accord', 
-            year: 2023, 
-            price: 31000,
-            imageUrl: 'https://images.unsplash.com/photo-1617469767053-d3b523a0b982?q=80&w=1974&auto=format&fit=crop' 
-          },
-          { 
-            id: '203', 
-            name: 'CR-V', 
-            year: 2023, 
-            price: 33000,
-            imageUrl: 'https://images.unsplash.com/photo-1568844293986-ca3c5a880aa2?q=80&w=1974&auto=format&fit=crop' 
-          }
-        ]
-      },
-      {
-        id: '3',
-        name: 'Ford',
-        logo: 'https://www.carlogos.org/car-logos/ford-logo-2017-1500x1101.png',
-        country: 'USA',
-        models: [
-          { 
-            id: '301', 
-            name: 'Mustang', 
-            year: 2023, 
-            price: 40000,
-            imageUrl: 'https://images.unsplash.com/photo-1584345604476-8ec5e12e42dd?q=80&w=1470&auto=format&fit=crop' 
-          },
-          { 
-            id: '302', 
-            name: 'F-150', 
-            year: 2023, 
-            price: 45000,
-            imageUrl: 'https://images.unsplash.com/photo-1581652177699-96676ee5f8a7?q=80&w=1470&auto=format&fit=crop' 
-          },
-          { 
-            id: '303', 
-            name: 'Explorer', 
-            year: 2023, 
-            price: 38000,
-            imageUrl: 'https://images.unsplash.com/photo-1533473359331-0135ef1b58bf?q=80&w=1470&auto=format&fit=crop' 
-          }
-        ]
-      },
-      {
-        id: '4',
-        name: 'BMW',
-        logo: 'https://www.carlogos.org/car-logos/bmw-logo-2020-gray-1500x1500.png',
-        country: 'Germany',
-        models: [
-          { 
-            id: '401', 
-            name: 'Series 3', 
-            year: 2023, 
-            price: 50000,
-            imageUrl: 'https://images.unsplash.com/photo-1556189250-72ba954cfc2b?q=80&w=1470&auto=format&fit=crop' 
-          },
-          { 
-            id: '402', 
-            name: 'Series 5', 
-            year: 2023, 
-            price: 65000,
-            imageUrl: 'https://images.unsplash.com/photo-1520050206274-a1ae44613e6d?q=80&w=1470&auto=format&fit=crop' 
-          },
-          { 
-            id: '403', 
-            name: 'X5', 
-            year: 2023, 
-            price: 70000,
-            imageUrl: 'https://images.unsplash.com/photo-1555215695-3004980ad54e?q=80&w=1470&auto=format&fit=crop' 
-          }
-        ]
-      }
-    ],
-    categories: [
-      { id: '1', name: 'Sedan', description: 'Four-door passenger car with a separate trunk' },
-      { id: '2', name: 'SUV', description: 'Sport Utility Vehicle with higher ground clearance' },
-      { id: '3', name: 'Truck', description: 'Vehicle with an open cargo area' },
-      { id: '4', name: 'Sports Car', description: 'High-performance vehicle designed for speed' },
-      { id: '5', name: 'Electric', description: 'Vehicles powered by electricity' }
-    ],
+    brands: [],
+    categories: [],
     selectedBrand: null,
     selectedModel: null,
     isLoading: false,
@@ -165,73 +48,175 @@ export const useCarBrandsStore = defineStore('CarBrandsStore', {
   }),
 
   actions: {
-    // Get all brands
-    getAllBrands() {
+    // Fetch all brands from the API
+    async fetchAllBrands() {
       this.isLoading = true
+      this.errorMessage = null
+      
       try {
+        const brandsService = new BrandsService()
+        const brandsData = await brandsService.getAllBrands()
+        
+        // Map the API response to match our store structure
+        this.brands = brandsData.map((brand: any) => ({
+          id: brand.id,
+          name: brand.name,
+          slug: brand.slug,
+          imageUrl: brand.imageUrl,
+          country: brand.country || 'Unknown',
+          description: brand.description || '',
+          models: brand.models.map((model: any) => ({
+            id: model.id,
+            name: model.name,
+            slug: model.slug,
+            imageUrl: model.imageUrl,
+            year: model.year || new Date().getFullYear(),
+            description: model.description || '',
+            // Add a default price since the API doesn't provide one
+            price: Math.floor(Math.random() * 50000) + 20000
+          }))
+        }))
+        
         return this.brands
       } catch (error: any) {
-        this.errorMessage = error.message
+        this.errorMessage = error.message || 'Failed to fetch brands'
+        console.error('Error fetching brands:', error)
+        return []
       } finally {
         this.isLoading = false
       }
+    },
+
+    // Get all brands (use fetchAllBrands first)
+    getAllBrands() {
+      if (this.brands.length === 0) {
+        return this.fetchAllBrands()
+      }
+      return this.brands
     },
 
     // Get all categories
     getAllCategories() {
+      return this.categories
+    },
+
+    // Get brand by ID
+    async getBrandById(brandId: string | number) {
       this.isLoading = true
+      this.errorMessage = null
+      
       try {
-        return this.categories
+        // Ensure brands are loaded
+        if (this.brands.length === 0) {
+          await this.fetchAllBrands()
+        }
+        
+        const brand = this.brands.find(b => b.id.toString() === brandId.toString()) || null
+        this.selectedBrand = brand
+        return brand
       } catch (error: any) {
         this.errorMessage = error.message
+        return null
       } finally {
         this.isLoading = false
       }
     },
 
-    // Get brand by ID
-    getBrandById(brandId: string) {
+    // Get brand by slug
+    async getBrandBySlug(slug: string) {
       this.isLoading = true
+      this.errorMessage = null
+      
       try {
-        const brand = this.brands.find(b => b.id === brandId) || null
+        // Ensure brands are loaded
+        if (this.brands.length === 0) {
+          await this.fetchAllBrands()
+        }
+        
+        const brand = this.brands.find(b => b.slug === slug) || null
         this.selectedBrand = brand
         return brand
       } catch (error: any) {
         this.errorMessage = error.message
+        return null
       } finally {
         this.isLoading = false
       }
     },
 
     // Get models by brand ID
-    getModelsByBrandId(brandId: string) {
+    async getModelsByBrandId(brandId: string | number) {
       this.isLoading = true
+      this.errorMessage = null
+      
       try {
-        const brand = this.brands.find(b => b.id === brandId)
+        // Ensure brands are loaded
+        if (this.brands.length === 0) {
+          await this.fetchAllBrands()
+        }
+        
+        const brand = this.brands.find(b => b.id.toString() === brandId.toString())
         return brand ? brand.models : []
       } catch (error: any) {
         this.errorMessage = error.message
+        return []
       } finally {
         this.isLoading = false
       }
     },
 
     // Get model by ID
-    getModelById(brandId: string, modelId: string) {
+    async getModelById(brandId: string | number, modelId: string | number) {
       this.isLoading = true
+      this.errorMessage = null
+      
       try {
-        const brand = this.brands.find(b => b.id === brandId)
+        // Ensure brands are loaded
+        if (this.brands.length === 0) {
+          await this.fetchAllBrands()
+        }
+        
+        const brand = this.brands.find(b => b.id.toString() === brandId.toString())
         if (!brand) return null
         
-        const model = brand.models.find(m => m.id === modelId) || null
+        const model = brand.models.find(m => m.id.toString() === modelId.toString()) || null
         this.selectedModel = model
         return model
       } catch (error: any) {
         this.errorMessage = error.message
+        return null
       } finally {
         this.isLoading = false
       }
     },
+
+    // Get model by slug
+    async getModelBySlug(brandSlug: string, modelSlug: string) {
+      this.isLoading = true
+      this.errorMessage = null
+      
+      try {
+        // Ensure brands are loaded
+        if (this.brands.length === 0) {
+          await this.fetchAllBrands()
+        }
+        
+        const brand = this.brands.find(b => b.slug === brandSlug)
+        if (!brand) return null
+        
+        const model = brand.models.find(m => m.slug === modelSlug) || null
+        this.selectedModel = model
+        return model
+      } catch (error: any) {
+        this.errorMessage = error.message
+        return null
+      } finally {
+        this.isLoading = false
+      }
+    },
+
+    // The following methods are kept for compatibility but should be updated in a real app
+    // to use the API service for creating/updating/deleting
 
     // Add new brand
     addBrand(brand: Omit<CarBrand, 'id'>) {
@@ -245,16 +230,17 @@ export const useCarBrandsStore = defineStore('CarBrandsStore', {
         return newBrand
       } catch (error: any) {
         this.errorMessage = error.message
+        return null
       } finally {
         this.isLoading = false
       }
     },
 
     // Add model to brand
-    addModelToBrand(brandId: string, model: Omit<CarModel, 'id'>) {
+    addModelToBrand(brandId: string | number, model: Omit<CarModel, 'id'>) {
       this.isLoading = true
       try {
-        const brand = this.brands.find(b => b.id === brandId)
+        const brand = this.brands.find(b => b.id.toString() === brandId.toString())
         if (!brand) throw new Error('Brand not found')
         
         const newModel = {
@@ -265,16 +251,17 @@ export const useCarBrandsStore = defineStore('CarBrandsStore', {
         return newModel
       } catch (error: any) {
         this.errorMessage = error.message
+        return null
       } finally {
         this.isLoading = false
       }
     },
 
     // Update brand
-    updateBrand(brandId: string, updates: Partial<CarBrand>) {
+    updateBrand(brandId: string | number, updates: Partial<CarBrand>) {
       this.isLoading = true
       try {
-        const brandIndex = this.brands.findIndex(b => b.id === brandId)
+        const brandIndex = this.brands.findIndex(b => b.id.toString() === brandId.toString())
         if (brandIndex === -1) throw new Error('Brand not found')
         
         this.brands[brandIndex] = {
@@ -284,22 +271,41 @@ export const useCarBrandsStore = defineStore('CarBrandsStore', {
         return this.brands[brandIndex]
       } catch (error: any) {
         this.errorMessage = error.message
+        return null
       } finally {
         this.isLoading = false
       }
     },
 
     // Delete brand
-    deleteBrand(brandId: string) {
+    deleteBrand(brandId: string | number) {
       this.isLoading = true
       try {
-        const brandIndex = this.brands.findIndex(b => b.id === brandId)
+        const brandIndex = this.brands.findIndex(b => b.id.toString() === brandId.toString())
         if (brandIndex === -1) throw new Error('Brand not found')
         
         this.brands.splice(brandIndex, 1)
         return true
       } catch (error: any) {
         this.errorMessage = error.message
+        return false
+      } finally {
+        this.isLoading = false
+      }
+    },
+    // Add this new action to the store
+    async getBrandModels(brandSlug: string) {
+      this.isLoading = true
+      this.errorMessage = null
+      
+      try {
+        const brandsService = new BrandsService()
+        const models = await brandsService.getAllModelsByBrand(brandSlug)
+        return models
+      } catch (error: any) {
+        this.errorMessage = error.message || 'Failed to fetch brand models'
+        console.error('Error fetching brand models:', error)
+        return []
       } finally {
         this.isLoading = false
       }

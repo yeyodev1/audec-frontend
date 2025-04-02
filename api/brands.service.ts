@@ -101,39 +101,120 @@ export default class BrandsService {
 
   async getModelDetails(brandSlug: string, modelSlug: string) {
     try {
-      const response = await Storyblok.get('cdn/stories', {
+      const response = await Storyblok.get(`cdn/stories/brands/${brandSlug}/${modelSlug}`, {
         token: '9gpCqqe772O7QL2swgQeXQtt',
-        version: 'published',
-        starts_with: `brands/${brandSlug}`,
-        by_slugs: `brands/${brandSlug}/${modelSlug}`
+        version: 'published'
       });
-      return response.data;
+      
+      const modelStory = response.data.story;
+      
+      // Format image URL
+      let imageUrl = modelStory.content.foto || null;
+      if (imageUrl && imageUrl.startsWith('//')) {
+        imageUrl = `https:${imageUrl}`;
+      }
+      
+      // Format date if needed
+      let year = modelStory.content.year || '';
+      if (year && year.includes(' ')) {
+        // Extract just the year part from the date string
+        year = year.split(' ')[0];
+      }
+      
+      // Create a formatted model object
+      const modelDetails = {
+        id: modelStory.id,
+        uuid: modelStory.uuid,
+        name: modelStory.content.modelName || modelStory.name,
+        slug: modelStory.slug,
+        fullSlug: modelStory.full_slug,
+        imageUrl: imageUrl,
+        year: year,
+        description: modelStory.content.description || '',
+        specifications: modelStory.content.specifications || {},
+        features: modelStory.content.features || [],
+        price: modelStory.content.price || null,
+        createdAt: modelStory.created_at,
+        updatedAt: modelStory.updated_at,
+        publishedAt: modelStory.published_at,
+        // Include any other fields you might need
+      };
+      
+      return modelDetails;
     } catch (error) {
       console.error('Error fetching model details:', error);
       throw error;
     }
   }
+
+  async getAllModelsByBrand(brandSlug: string) {
+      try {
+        // Get all models for the brand
+        const response = await Storyblok.get('cdn/stories', {
+          token: '9gpCqqe772O7QL2swgQeXQtt',
+          version: 'published',
+          starts_with: `brands/${brandSlug}/`,
+          excluding_slugs: `brands/${brandSlug}/index` // This wasn't enough
+        });
+        
+        // Filter out the index entry and map the remaining models
+        const models = response.data.stories
+          .filter((story: any) => story.slug !== brandSlug) // Add this filter
+          .map((modelStory: any) => {
+            // Rest of the mapping code remains the same
+            let imageUrl = modelStory.content.foto || null;
+            if (imageUrl && imageUrl.startsWith('//')) {
+              imageUrl = `https:${imageUrl}`;
+            }
+            
+            let year = modelStory.content.year || '';
+            if (year && year.includes(' ')) {
+              year = year.split(' ')[0];
+            }
+            
+            return {
+              id: modelStory.id,
+              uuid: modelStory.uuid,
+              name: modelStory.content.modelName || modelStory.name,
+              slug: modelStory.slug,
+              fullSlug: modelStory.full_slug,
+              imageUrl: imageUrl,
+              year: year,
+              description: modelStory.content.description || '',
+              price: modelStory.content.price || null,
+              createdAt: modelStory.created_at,
+              updatedAt: modelStory.updated_at
+            };
+          });
+        
+        return models;
+      } catch (error) {
+        console.error(`Error fetching models for brand ${brandSlug}:`, error);
+        throw error;
+      }
+    }
 }
 
-// Updated test code to include getAllBrands
+// Updated test code
 (async () => {
   try {
     const brandsService = new BrandsService();
     
     // Test getAllBrands
-    console.log('Testing getAllBrands...');
+    console.log('\nTesting getAllBrands...');
     const allBrands = await brandsService.getAllBrands();
     console.log('All Brands:', allBrands);
 
-    // Test getBrandDetails
-    // console.log('\nTesting getBrandDetails for Chevrolet...');
-    // const brandDetails = await brandsService.getBrandDetails('chevrolet');
-    // console.log('Brand Details:', brandDetails);
+    // Test getAllModelsByBrand
+    console.log('\nTesting getAllModelsByBrand for Hyundai...');
+    const hyundaiModels = await brandsService.getAllModelsByBrand('hyundai');
+    console.log('Hyundai Models:', hyundaiModels);
 
-    // // Test getModelDetails
-    // console.log('\nTesting getModelDetails for Chevrolet Camioneta...');
-    // const modelDetails = await brandsService.getModelDetails('chevrolet', 'camioneta');
-    // console.log('Model Details:', modelDetails);
+    // Test getModelDetails for a specific model
+    console.log('\nTesting getModelDetails for Hyundai Sedan...');
+    const sedanDetails = await brandsService.getModelDetails('hyundai', 'sedan');
+    console.log('Sedan Details:', sedanDetails);
+
   } catch (error) {
     console.error('Test Error:', error);
   }
