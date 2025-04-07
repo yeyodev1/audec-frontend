@@ -35,7 +35,7 @@ onMounted(async () => {
     <div v-else class="brands-grid">
       <div v-for="brand in brands" :key="brand.id" class="brand-card">
         <div class="brand-card__logo">
-          <img :src="brand.logo" :alt="brand.name" class="brand-logo">
+          <img :src="brand.imageUrl" :alt="brand.name" class="brand-logo">
         </div>
         <div class="brand-card__info">
           <h3 class="brand-name">{{ brand.name }}</h3>
