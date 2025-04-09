@@ -67,6 +67,8 @@ onMounted(async () => {
     
     // Get the model by slug
     currentModel.value = currentBrand.value.models.find(model => model.slug === modelSlug.value);
+
+    console.log('currentModel: ', currentModel.value)
     
     if (!currentModel.value) {
       console.error('Model not found:', modelSlug.value);
@@ -75,15 +77,13 @@ onMounted(async () => {
     }
     
     // Setup gallery images
-    // If model has images array, use it, otherwise create an array with the main image
     if (currentModel.value.images && currentModel.value.images.length > 0) {
+      // Use the images array directly from the model
       galleryImages.value = currentModel.value.images;
     } else if (currentModel.value.imageUrl) {
+      // If no images array but has imageUrl, create a single image array
       galleryImages.value = [
-        { url: currentModel.value.imageUrl, alt: currentModel.value.name },
-        // Add some placeholder images for testing (remove in production)
-        { url: currentModel.value.imageUrl, alt: 'Vista lateral' },
-        { url: currentModel.value.imageUrl, alt: 'Vista trasera' }
+        { url: currentModel.value.imageUrl, alt: currentModel.value.name }
       ];
     }
     
@@ -151,8 +151,13 @@ onMounted(async () => {
           </div>
           
           <!-- Image counter -->
-          <div class="gallery-counter" v-if="galleryImages.length > 1">
-            {{ currentImageIndex + 1 }} / {{ galleryImages.length }}
+          <div class="gallery-counter">
+            <span v-if="galleryImages.length > 1">
+              Foto {{ currentImageIndex + 1 }} de {{ galleryImages.length }}
+            </span>
+            <span v-else>
+              {{ galleryImages.length }} foto disponible
+            </span>
           </div>
         </div>
 
@@ -430,6 +435,13 @@ onMounted(async () => {
   margin-top: 0.5rem;
   font-size: 0.9rem;
   color: #666;
+  background-color: rgba(255, 255, 255, 0.8);
+  padding: 0.3rem 0.8rem;
+  border-radius: 20px;
+  display: inline-block;
+  position: relative;
+  left: 50%;
+  transform: translateX(-50%);
 }
 
 .model-main-image {

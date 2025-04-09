@@ -10,6 +10,11 @@ interface CarModel {
   year: string | number
   description?: string
   price?: number
+  // Add images array for gallery
+  images?: Array<{
+    url: string
+    alt: string
+  }>
 }
 
 interface CarBrand {
@@ -65,16 +70,29 @@ export const useCarBrandsStore = defineStore('CarBrandsStore', {
           imageUrl: brand.imageUrl,
           country: brand.country || 'Unknown',
           description: brand.description || '',
-          models: brand.models.map((model: any) => ({
-            id: model.id,
-            name: model.name,
-            slug: model.slug,
-            imageUrl: model.imageUrl,
-            year: model.year || new Date().getFullYear(),
-            description: model.description || '',
-            // Add a default price since the API doesn't provide one
-            price: Math.floor(Math.random() * 50000) + 20000
-          }))
+          models: brand.models.map((model: any) => {
+            // Use the images array directly if it exists
+            let images = model.images || [];
+            
+            // If no images array but has imageUrl, create a single image array
+            if (images.length === 0 && model.imageUrl) {
+              images = [{
+                url: model.imageUrl,
+                alt: `${model.name} main image`
+              }];
+            }
+            
+            return {
+              id: model.id,
+              name: model.name || model.modelName,
+              slug: model.slug,
+              imageUrl: model.imageUrl || '',
+              year: model.year || new Date().getFullYear(),
+              description: model.description || '',
+              price: Math.floor(Math.random() * 50000) + 20000,
+              images: images
+            };
+          })
         }))
         
         return this.brands
@@ -205,7 +223,13 @@ export const useCarBrandsStore = defineStore('CarBrandsStore', {
         if (!brand) return null
         
         const model = brand.models.find(m => m.slug === modelSlug) || null
-        this.selectedModel = model
+        
+        // If we found the model, set it as selected
+        if (model) {
+          this.selectedBrand = brand
+          this.selectedModel = model
+        }
+        
         return model
       } catch (error: any) {
         this.errorMessage = error.message
@@ -215,99 +239,28 @@ export const useCarBrandsStore = defineStore('CarBrandsStore', {
       }
     },
 
-    // The following methods are kept for compatibility but should be updated in a real app
-    // to use the API service for creating/updating/deleting
-
-    // Add new brand
-    addBrand(brand: Omit<CarBrand, 'id'>) {
-      this.isLoading = true
+    // Get model images
+    getModelImages(brandSlug: string, modelSlug: string) {
       try {
-        const newBrand = {
-          ...brand,
-          id: Date.now().toString() // Generate a simple ID
-        }
-        this.brands.push(newBrand as CarBrand)
-        return newBrand
-      } catch (error: any) {
-        this.errorMessage = error.message
-        return null
-      } finally {
-        this.isLoading = false
-      }
-    },
-
-    // Add model to brand
-    addModelToBrand(brandId: string | number, model: Omit<CarModel, 'id'>) {
-      this.isLoading = true
-      try {
-        const brand = this.brands.find(b => b.id.toString() === brandId.toString())
-        if (!brand) throw new Error('Brand not found')
+        const brand = this.brands.find(b => b.slug === brandSlug)
+        if (!brand) return []
         
-        const newModel = {
-          ...model,
-          id: Date.now().toString() // Generate a simple ID
-        }
-        brand.models.push(newModel as CarModel)
-        return newModel
-      } catch (error: any) {
-        this.errorMessage = error.message
-        return null
-      } finally {
-        this.isLoading = false
-      }
-    },
-
-    // Update brand
-    updateBrand(brandId: string | number, updates: Partial<CarBrand>) {
-      this.isLoading = true
-      try {
-        const brandIndex = this.brands.findIndex(b => b.id.toString() === brandId.toString())
-        if (brandIndex === -1) throw new Error('Brand not found')
+        const model = brand.models.find(m => m.slug === modelSlug)
+        if (!model) return []
         
-        this.brands[brandIndex] = {
-          ...this.brands[brandIndex],
-          ...updates
+        // Return the images array if it exists
+        if (model.images && model.images.length > 0) {
+          return model.images
         }
-        return this.brands[brandIndex]
-      } catch (error: any) {
-        this.errorMessage = error.message
-        return null
-      } finally {
-        this.isLoading = false
-      }
-    },
-
-    // Delete brand
-    deleteBrand(brandId: string | number) {
-      this.isLoading = true
-      try {
-        const brandIndex = this.brands.findIndex(b => b.id.toString() === brandId.toString())
-        if (brandIndex === -1) throw new Error('Brand not found')
         
-        this.brands.splice(brandIndex, 1)
-        return true
-      } catch (error: any) {
-        this.errorMessage = error.message
-        return false
-      } finally {
-        this.isLoading = false
-      }
-    },
-    // Add this new action to the store
-    async getBrandModels(brandSlug: string) {
-      this.isLoading = true
-      this.errorMessage = null
-      
-      try {
-        const brandsService = new BrandsService()
-        const models = await brandsService.getAllModelsByBrand(brandSlug)
-        return models
-      } catch (error: any) {
-        this.errorMessage = error.message || 'Failed to fetch brand models'
-        console.error('Error fetching brand models:', error)
+        // Otherwise return an array with just the main image
+        return [{
+          url: model.imageUrl,
+          alt: model.name
+        }]
+      } catch (error) {
+        console.error('Error getting model images:', error)
         return []
-      } finally {
-        this.isLoading = false
       }
     }
   }

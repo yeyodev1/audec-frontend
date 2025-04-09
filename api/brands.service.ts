@@ -50,13 +50,45 @@ export default class BrandsService {
               modelPhotoUrl = `https:${modelPhotoUrl}`;
             }
             
+            // Process gallery images
+            const galleryImages: { url: any; alt: any; }[] = [];
+            
+            // Add main image if it exists
+            if (modelPhotoUrl) {
+              galleryImages.push({
+                url: modelPhotoUrl,
+                alt: `${modelStory.content.modelName || modelStory.name} main image`
+              });
+            }
+            
+            // Add additional images from fotos array if it exists
+            if (modelStory.content.fotos && Array.isArray(modelStory.content.fotos)) {
+              modelStory.content.fotos.forEach((foto: any) => {
+                // Format image URL if needed
+                let fotoUrl = foto.filename || '';
+                if (fotoUrl && fotoUrl.startsWith('//')) {
+                  fotoUrl = `https:${fotoUrl}`;
+                }
+                
+                // Check if the image is not already in the array (avoid duplicates)
+                if (fotoUrl && !galleryImages.some(img => img.url === fotoUrl)) {
+                  galleryImages.push({
+                    url: fotoUrl,
+                    alt: foto.alt || `${modelStory.content.modelName || modelStory.name} gallery image`
+                  });
+                }
+              });
+            }
+            
             return {
               id: modelStory.id,
               name: modelStory.content.modelName || modelStory.name,
               slug: modelStory.slug,
               imageUrl: modelPhotoUrl,
               year: modelStory.content.year || '',
-              description: modelStory.content.description || ''
+              description: modelStory.content.description || '',
+              fotos: modelStory.content.fotos || [], // Include raw fotos data
+              images: galleryImages // Include processed gallery images
             };
           });
           
@@ -114,6 +146,36 @@ export default class BrandsService {
         imageUrl = `https:${imageUrl}`;
       }
       
+      // Process gallery images
+      const galleryImages: { url: any; alt: any; }[] = [];
+      
+      // Add main image if it exists
+      if (imageUrl) {
+        galleryImages.push({
+          url: imageUrl,
+          alt: `${modelStory.content.modelName || modelStory.name} main image`
+        });
+      }
+      
+      // Add additional images from fotos array if it exists
+      if (modelStory.content.fotos && Array.isArray(modelStory.content.fotos)) {
+        modelStory.content.fotos.forEach((foto: any) => {
+          // Format image URL if needed
+          let fotoUrl = foto.filename || '';
+          if (fotoUrl && fotoUrl.startsWith('//')) {
+            fotoUrl = `https:${fotoUrl}`;
+          }
+          
+          // Check if the image is not already in the array (avoid duplicates)
+          if (fotoUrl && !galleryImages.some(img => img.url === fotoUrl)) {
+            galleryImages.push({
+              url: fotoUrl,
+              alt: foto.alt || `${modelStory.content.modelName || modelStory.name} gallery image`
+            });
+          }
+        });
+      }
+      
       // Format date if needed
       let year = modelStory.content.year || '';
       if (year && year.includes(' ')) {
@@ -137,7 +199,8 @@ export default class BrandsService {
         createdAt: modelStory.created_at,
         updatedAt: modelStory.updated_at,
         publishedAt: modelStory.published_at,
-        // Include any other fields you might need
+        fotos: modelStory.content.fotos || [], // Include raw fotos data
+        images: galleryImages // Include processed gallery images
       };
       
       return modelDetails;
@@ -195,27 +258,27 @@ export default class BrandsService {
     }
 }
 
-// Updated test code
-(async () => {
-  try {
-    const brandsService = new BrandsService();
+// // Updated test code
+// (async () => {
+//   try {
+//     const brandsService = new BrandsService();
     
-    // Test getAllBrands
-    console.log('\nTesting getAllBrands...');
-    const allBrands = await brandsService.getAllBrands();
-    console.log('All Brands:', allBrands);
+//     // Test getAllBrands
+//     console.log('\nTesting getAllBrands...');
+//     const allBrands = await brandsService.getAllBrands();
+//     console.log('All Brands:', allBrands);
 
-    // Test getAllModelsByBrand
-    console.log('\nTesting getAllModelsByBrand for Hyundai...');
-    const hyundaiModels = await brandsService.getAllModelsByBrand('hyundai');
-    console.log('Hyundai Models:', hyundaiModels);
+//     // Test getAllModelsByBrand
+//     console.log('\nTesting getAllModelsByBrand for Hyundai...');
+//     const hyundaiModels = await brandsService.getAllModelsByBrand('hyundai');
+//     console.log('Hyundai Models:', hyundaiModels);
 
-    // Test getModelDetails for a specific model
-    console.log('\nTesting getModelDetails for Hyundai Sedan...');
-    const sedanDetails = await brandsService.getModelDetails('hyundai', 'sedan');
-    console.log('Sedan Details:', sedanDetails);
+//     // Test getModelDetails for a specific model
+//     console.log('\nTesting getModelDetails for Hyundai Sedan...');
+//     const sedanDetails = await brandsService.getModelDetails('hyundai', 'sedan');
+//     console.log('Sedan Details:', sedanDetails);
 
-  } catch (error) {
-    console.error('Test Error:', error);
-  }
-})();
+//   } catch (error) {
+//     console.error('Test Error:', error);
+//   }
+// })();
