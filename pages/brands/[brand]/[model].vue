@@ -17,9 +17,34 @@ const modelSlug = computed(() => route.params.model);
 const currentModel = ref(null);
 const currentBrand = ref(null);
 
+// Gallery state
+const currentImageIndex = ref(0);
+const galleryImages = ref([]);
+
 const formatPrice = (price) => {
   if (!price) return 'Precio a consultar';
   return `$${price.toLocaleString()}`;
+};
+
+// Gallery navigation methods
+const nextImage = () => {
+  if (currentImageIndex.value < galleryImages.value.length - 1) {
+    currentImageIndex.value++;
+  } else {
+    currentImageIndex.value = 0; // Loop back to first image
+  }
+};
+
+const prevImage = () => {
+  if (currentImageIndex.value > 0) {
+    currentImageIndex.value--;
+  } else {
+    currentImageIndex.value = galleryImages.value.length - 1; // Loop to last image
+  }
+};
+
+const selectImage = (index) => {
+  currentImageIndex.value = index;
 };
 
 onMounted(async () => {
@@ -48,6 +73,20 @@ onMounted(async () => {
       await router.push(`/brands/${brandSlug.value}`);
       return;
     }
+    
+    // Setup gallery images
+    // If model has images array, use it, otherwise create an array with the main image
+    if (currentModel.value.images && currentModel.value.images.length > 0) {
+      galleryImages.value = currentModel.value.images;
+    } else if (currentModel.value.imageUrl) {
+      galleryImages.value = [
+        { url: currentModel.value.imageUrl, alt: currentModel.value.name },
+        // Add some placeholder images for testing (remove in production)
+        { url: currentModel.value.imageUrl, alt: 'Vista lateral' },
+        { url: currentModel.value.imageUrl, alt: 'Vista trasera' }
+      ];
+    }
+    
   } catch (error) {
     console.error('Error loading model details:', error);
     loadingMessage.value = 'Error al cargar la información del modelo.';
@@ -78,8 +117,43 @@ onMounted(async () => {
 
       <!-- Main Content -->
       <div class="model-content">
+        <!-- Gallery Section -->
         <div class="model-image-gallery">
-          <img :src="currentModel.imageUrl" :alt="currentModel.name" class="model-main-image">
+          <div class="gallery-main">
+            <button class="gallery-nav gallery-nav--prev" @click="prevImage" v-if="galleryImages.length > 1">
+              <i class="fas fa-chevron-left"></i>
+            </button>
+            
+            <div class="gallery-main-image">
+              <img 
+                :src="galleryImages[currentImageIndex]?.url || currentModel.imageUrl" 
+                :alt="galleryImages[currentImageIndex]?.alt || currentModel.name" 
+                class="model-main-image"
+              >
+            </div>
+            
+            <button class="gallery-nav gallery-nav--next" @click="nextImage" v-if="galleryImages.length > 1">
+              <i class="fas fa-chevron-right"></i>
+            </button>
+          </div>
+          
+          <!-- Thumbnails -->
+          <div class="gallery-thumbnails" v-if="galleryImages.length > 1">
+            <div 
+              v-for="(image, index) in galleryImages" 
+              :key="index"
+              class="gallery-thumbnail"
+              :class="{ 'active': currentImageIndex === index }"
+              @click="selectImage(index)"
+            >
+              <img :src="image.url" :alt="image.alt">
+            </div>
+          </div>
+          
+          <!-- Image counter -->
+          <div class="gallery-counter" v-if="galleryImages.length > 1">
+            {{ currentImageIndex + 1 }} / {{ galleryImages.length }}
+          </div>
         </div>
 
         <div class="model-info">
@@ -243,10 +317,124 @@ onMounted(async () => {
   top: 2rem;
 }
 
+.gallery-main {
+  position: relative;
+  margin-bottom: 1rem;
+  border-radius: 12px;
+  overflow: hidden;
+  box-shadow: 0 5px 15px rgba(0, 0, 0, 0.1);
+}
+
+.gallery-main-image {
+  position: relative;
+  width: 100%;
+  height: 0;
+  padding-bottom: 75%; /* 4:3 aspect ratio */
+  background-color: #f8f8f8;
+  
+  img {
+    position: absolute;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    object-fit: cover;
+  }
+}
+
+.gallery-nav {
+  position: absolute;
+  top: 50%;
+  transform: translateY(-50%);
+  width: 40px;
+  height: 40px;
+  background: rgba(255, 255, 255, 0.8);
+  border: none;
+  border-radius: 50%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  cursor: pointer;
+  z-index: 2;
+  transition: all 0.2s ease;
+  
+  &:hover {
+    background: white;
+    box-shadow: 0 2px 8px rgba(0, 0, 0, 0.2);
+  }
+  
+  i {
+    color: #333;
+    font-size: 1rem;
+  }
+  
+  &--prev {
+    left: 10px;
+  }
+  
+  &--next {
+    right: 10px;
+  }
+}
+
+.gallery-thumbnails {
+  display: flex;
+  gap: 0.5rem;
+  margin-top: 1rem;
+  overflow-x: auto;
+  padding-bottom: 0.5rem;
+  
+  &::-webkit-scrollbar {
+    height: 4px;
+  }
+  
+  &::-webkit-scrollbar-track {
+    background: #f1f1f1;
+    border-radius: 10px;
+  }
+  
+  &::-webkit-scrollbar-thumb {
+    background: #ccc;
+    border-radius: 10px;
+  }
+}
+
+.gallery-thumbnail {
+  flex: 0 0 80px;
+  height: 60px;
+  border-radius: 6px;
+  overflow: hidden;
+  cursor: pointer;
+  opacity: 0.7;
+  transition: all 0.2s ease;
+  border: 2px solid transparent;
+  
+  &:hover {
+    opacity: 0.9;
+  }
+  
+  &.active {
+    opacity: 1;
+    border-color: #ff4444;
+  }
+  
+  img {
+    width: 100%;
+    height: 100%;
+    object-fit: cover;
+  }
+}
+
+.gallery-counter {
+  text-align: center;
+  margin-top: 0.5rem;
+  font-size: 0.9rem;
+  color: #666;
+}
+
 .model-main-image {
   width: 100%;
   border-radius: 12px;
-  box-shadow: 0 5px 15px rgba(0, 0, 0, 0.1);
 }
 
 .model-header {

@@ -2,20 +2,24 @@
 import { useCarBrandsStore } from '@/store/CarBrandsStore';
 import { ref, onMounted } from 'vue';
 import BrandsService from '@/api/brands.service';
-
 import { useRoute, useRouter } from 'vue-router';
 
 const route = useRoute();
-
-
 const carBrandsStore = useCarBrandsStore();
 const brands = ref([]);
 const isLoading = ref(true);
 
 onMounted(async () => {
   try {
-
-    brands.value = carBrandsStore.getAllBrands();
+    isLoading.value = true;
+    // Make sure to await the promise returned by getAllBrands
+    brands.value = await carBrandsStore.fetchAllBrands();
+    
+    // If brands are still empty after fetching, try again
+    if (!brands.value || brands.value.length === 0) {
+      console.log('No brands loaded, trying again...');
+      brands.value = await carBrandsStore.fetchAllBrands();
+    }
   } catch (error) {
     console.error('Error loading brands:', error);
   } finally {
@@ -29,10 +33,11 @@ onMounted(async () => {
     <h2 class="brands-title">Nuestras Marcas</h2>
     
     <div v-if="isLoading" class="loading">
+      <div class="loading-spinner"></div>
       <p>Cargando marcas...</p>
     </div>
     
-    <div v-else class="brands-grid">
+    <div v-else-if="brands && brands.length > 0" class="brands-grid">
       <div v-for="brand in brands" :key="brand.id" class="brand-card">
         <div class="brand-card__logo">
           <img :src="brand.imageUrl" :alt="brand.name" class="brand-logo">
@@ -40,13 +45,17 @@ onMounted(async () => {
         <div class="brand-card__info">
           <h3 class="brand-name">{{ brand.name }}</h3>
           <p class="brand-country">{{ brand.country }}</p>
-          <p class="brand-models">{{ brand.models.length }} modelos</p>
+          <p class="brand-models">{{ brand.models.length - 1 }} modelos</p>
         </div>
-        <nuxt-link :to="`/brands/${brand.name}`" class="brand-link">
+        <nuxt-link :to="`/brands/${brand.slug}`" class="brand-link">
           Ver modelos
           <i class="fa-solid fa-arrow-right"></i>
         </nuxt-link>
       </div>
+    </div>
+    
+    <div v-else class="no-brands">
+      <p>No se encontraron marcas disponibles.</p>
     </div>
   </div>
 </template>
@@ -83,6 +92,28 @@ onMounted(async () => {
   padding: 2rem;
   font-size: 1.2rem;
   color: $greyDark;
+  
+  .loading-spinner {
+    display: inline-block;
+    width: 50px;
+    height: 50px;
+    border: 5px solid rgba(0, 0, 0, 0.1);
+    border-radius: 50%;
+    border-top-color: $red;
+    animation: spin 1s ease-in-out infinite;
+    margin-bottom: 1rem;
+  }
+  
+  @keyframes spin {
+    to { transform: rotate(360deg); }
+  }
+}
+
+.no-brands {
+  text-align: center;
+  padding: 3rem;
+  color: $greyDark;
+  font-size: 1.2rem;
 }
 
 .brands-grid {
