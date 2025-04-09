@@ -32,17 +32,12 @@ onMounted(async () => {
   try {
     loadingMessage.value = 'Cargando información...';
     
-    // Fetch brands data
-    await carBrandsStore.fetchAllBrands();
-    
-    // Check if brand exists after loading
-    if (!currentBrand.value) {
-      console.error('Brand not found:', brandSlug.value);
-      await router.push('/brands');
-      return;
+    // Fetch brands data if not already loaded
+    if (carBrandsStore.brands.length === 0) {
+      await carBrandsStore.fetchAllBrands();
     }
     
-    // Load models for the current brand
+    // Load models for the current brand regardless of currentBrand value
     await loadBrandModels();
     
   } catch (error) {
@@ -59,16 +54,7 @@ watch(brandSlug, async (newSlug) => {
   
   isLoading.value = true;
   try {
-    if (carBrandsStore.brands.length === 0) {
-      await carBrandsStore.fetchAllBrands();
-    }
-    
-    if (!currentBrand.value) {
-      console.error('Brand not found after navigation:', newSlug);
-      await router.push('/brands');
-      return;
-    }
-    
+    // Load models directly without additional checks
     await loadBrandModels();
   } catch (error) {
     console.error('Error during navigation:', error);
@@ -80,14 +66,6 @@ watch(brandSlug, async (newSlug) => {
 const formatPrice = (price) => {
   if (!price) return 'Precio a consultar';
   return `$${price.toLocaleString()}`;
-};
-
-const handleModelSelect = async (modelSlug) => {
-  try {
-    await router.push(`/brands/${brandSlug.value}/${modelSlug}`);
-  } catch (error) {
-    console.error('Error navigating to model:', error);
-  }
 };
 </script>
 
@@ -116,12 +94,12 @@ const handleModelSelect = async (modelSlug) => {
       <div class="models-section">
         <h2>Modelos disponibles</h2>
         
-        <div v-if="currentBrand.models && currentBrand.models.length > 0" class="models-grid">
-          <div 
-            v-for="(model, index) in currentBrand.models" 
-            :key="index" 
+        <div v-if="brandModels && brandModels.length > 0" class="models-grid">
+          <nuxt-link 
+            v-for="(model, index) in brandModels" 
+            :key="model.id || index" 
+            :to="`/brands/${brandSlug}/${model.slug}`"
             class="model-card"
-            @click="handleModelSelect(model.slug)"
           >
             <div class="model-image-wrapper">
               <img :src="model.imageUrl" :alt="model.name">
@@ -134,13 +112,19 @@ const handleModelSelect = async (modelSlug) => {
               </div>
               <button class="details-btn">Ver detalles</button>
             </div>
-          </div>
+          </nuxt-link>
         </div>
         
         <div v-else class="no-models">
           <p>No hay modelos disponibles para esta marca</p>
         </div>
       </div>
+    </div>
+    
+    <div v-else class="not-found">
+      <h2>Marca no encontrada</h2>
+      <p>Lo sentimos, la marca que buscas no existe en nuestro catálogo.</p>
+      <nuxt-link to="/brands" class="back-link">Volver a marcas</nuxt-link>
     </div>
   </div>
 </template>

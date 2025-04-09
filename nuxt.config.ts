@@ -23,9 +23,9 @@ export default defineNuxtConfig({
         }
       }
     },
-    server: {
-      allowedHosts: ['358a-191-99-49-39.ngrok-free.app']
-    }
+    // server: {
+    //   allowedHosts: ['31aa-2800-bf0-8143-368-f586-8035-6d7b-9776.ngrok-free.app']
+    // }
   },
   modules: [
     '@pinia/nuxt'

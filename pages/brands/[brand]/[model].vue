@@ -7,36 +7,50 @@ const route = useRoute();
 const router = useRouter();
 const carBrandsStore = useCarBrandsStore();
 const isLoading = ref(true);
+const loadingMessage = ref('Cargando información del modelo...');
 
-const brandId = computed(() => route.params.brand);
-// Fix the model parameter name to match the route
-const modelId = computed(() => route.params.model);
+// Get brand and model slugs from route params
+const brandSlug = computed(() => route.params.brand);
+const modelSlug = computed(() => route.params.model);
 
-const currentModel = computed(() => {
-  return carBrandsStore.getModelById(brandId.value, modelId.value);
-});
-
-const currentBrand = computed(() => {
-  return carBrandsStore.getBrandById(brandId.value);
-});
+// Store the current model and brand
+const currentModel = ref(null);
+const currentBrand = ref(null);
 
 const formatPrice = (price) => {
+  if (!price) return 'Precio a consultar';
   return `$${price.toLocaleString()}`;
 };
 
 onMounted(async () => {
   try {
+    loadingMessage.value = 'Cargando información...';
+    
+    // Ensure brands are loaded
     if (carBrandsStore.brands.length === 0) {
-      await carBrandsStore.getAllBrands();
+      await carBrandsStore.fetchAllBrands();
     }
-
-    if (!currentModel.value || !currentBrand.value) {
-      console.error('Model or brand not found');
-      await router.push(`/brands/${brandId.value}`);
+    
+    // Get the brand by slug
+    currentBrand.value = carBrandsStore.brands.find(brand => brand.slug === brandSlug.value);
+    
+    if (!currentBrand.value) {
+      console.error('Brand not found:', brandSlug.value);
+      await router.push('/brands');
+      return;
+    }
+    
+    // Get the model by slug
+    currentModel.value = currentBrand.value.models.find(model => model.slug === modelSlug.value);
+    
+    if (!currentModel.value) {
+      console.error('Model not found:', modelSlug.value);
+      await router.push(`/brands/${brandSlug.value}`);
+      return;
     }
   } catch (error) {
-    console.error('Error loading model:', error);
-    await router.push(`/brands/${brandId.value}`);
+    console.error('Error loading model details:', error);
+    loadingMessage.value = 'Error al cargar la información del modelo.';
   } finally {
     isLoading.value = false;
   }
@@ -46,18 +60,19 @@ onMounted(async () => {
 <template>
   <div class="container">
     <div v-if="isLoading" class="loading">
-      <p>Cargando información...</p>
+      <div class="loading-spinner"></div>
+      <p>{{ loadingMessage }}</p>
     </div>
 
     <div v-else-if="currentModel && currentBrand" class="model-details">
       <!-- Breadcrumb Navigation -->
       <div class="breadcrumb">
         <nuxt-link to="/brands" class="breadcrumb-link">Marcas</nuxt-link>
-        <i class="fa-solid fa-chevron-right"></i>
-        <nuxt-link :to="`/brands/${currentBrand.id}`" class="breadcrumb-link">
+        <i class="fas fa-chevron-right"></i>
+        <nuxt-link :to="`/brands/${brandSlug}`" class="breadcrumb-link">
           {{ currentBrand.name }}
         </nuxt-link>
-        <i class="fa-solid fa-chevron-right"></i>
+        <i class="fas fa-chevron-right"></i>
         <span class="breadcrumb-current">{{ currentModel.name }}</span>
       </div>
 
@@ -69,7 +84,7 @@ onMounted(async () => {
 
         <div class="model-info">
           <div class="model-header">
-            <img :src="currentBrand.logo" :alt="currentBrand.name" class="brand-logo">
+            <img :src="currentBrand.imageUrl" :alt="currentBrand.name" class="brand-logo">
             <div>
               <h1 class="model-name">{{ currentModel.name }}</h1>
               <p class="model-brand">{{ currentBrand.name }}</p>
@@ -78,7 +93,7 @@ onMounted(async () => {
 
           <div class="model-specs">
             <div class="spec-item">
-              <i class="fa-solid fa-calendar"></i>
+              <i class="fas fa-calendar"></i>
               <div>
                 <h3>Año</h3>
                 <p>{{ currentModel.year }}</p>
@@ -86,7 +101,7 @@ onMounted(async () => {
             </div>
 
             <div class="spec-item">
-              <i class="fa-solid fa-tag"></i>
+              <i class="fas fa-tag"></i>
               <div>
                 <h3>Precio</h3>
                 <p>{{ formatPrice(currentModel.price) }}</p>
@@ -94,7 +109,7 @@ onMounted(async () => {
             </div>
 
             <div class="spec-item">
-              <i class="fa-solid fa-flag"></i>
+              <i class="fas fa-flag"></i>
               <div>
                 <h3>País de origen</h3>
                 <p>{{ currentBrand.country }}</p>
@@ -102,13 +117,18 @@ onMounted(async () => {
             </div>
           </div>
 
+          <div class="model-description" v-if="currentModel.description">
+            <h3>Descripción</h3>
+            <p>{{ currentModel.description }}</p>
+          </div>
+
           <div class="model-actions">
             <button class="action-button action-button--primary">
-              <i class="fa-solid fa-phone"></i>
+              <i class="fas fa-phone"></i>
               Contactar vendedor
             </button>
             <button class="action-button action-button--secondary">
-              <i class="fa-regular fa-heart"></i>
+              <i class="far fa-heart"></i>
               Guardar
             </button>
           </div>
@@ -119,7 +139,7 @@ onMounted(async () => {
     <div v-else class="not-found">
       <h2>Modelo no encontrado</h2>
       <p>Lo sentimos, el modelo que buscas no existe en nuestro catálogo.</p>
-      <nuxt-link :to="`/brands/${brandId}`" class="back-link">
+      <nuxt-link :to="`/brands/${brandSlug}`" class="back-link">
         Volver a la marca
       </nuxt-link>
     </div>
@@ -130,12 +150,54 @@ onMounted(async () => {
 .container {
   max-width: 1200px;
   margin: 0 auto;
-  padding: 2rem 1rem;
+  padding: 2rem;
 }
 
-.loading, .not-found {
+.loading {
   text-align: center;
-  padding: 3rem 1rem;
+  padding: 4rem 2rem;
+  
+  .loading-spinner {
+    display: inline-block;
+    width: 50px;
+    height: 50px;
+    border: 5px solid rgba(0, 0, 0, 0.1);
+    border-radius: 50%;
+    border-top-color: #ff4444;
+    animation: spin 1s ease-in-out infinite;
+    margin-bottom: 1rem;
+  }
+  
+  @keyframes spin {
+    to { transform: rotate(360deg); }
+  }
+}
+
+.not-found {
+  text-align: center;
+  padding: 4rem 2rem;
+  
+  h2 {
+    font-size: 2rem;
+    margin-bottom: 1rem;
+  }
+  
+  p {
+    margin-bottom: 2rem;
+    color: #666;
+  }
+  
+  .back-link {
+    display: inline-flex;
+    align-items: center;
+    color: #ff4444;
+    text-decoration: none;
+    font-weight: 600;
+    
+    &:hover {
+      text-decoration: underline;
+    }
+  }
 }
 
 .breadcrumb {
@@ -145,23 +207,23 @@ onMounted(async () => {
   margin-bottom: 2rem;
   
   i {
-    color: $greyDark;
+    color: #666;
     font-size: 0.8rem;
   }
 }
 
 .breadcrumb-link {
-  color: $greyDark;
+  color: #666;
   text-decoration: none;
   transition: color 0.2s ease;
   
   &:hover {
-    color: $red;
+    color: #ff4444;
   }
 }
 
 .breadcrumb-current {
-  color: $black;
+  color: #333;
   font-weight: 600;
 }
 
@@ -170,6 +232,10 @@ onMounted(async () => {
   grid-template-columns: 1fr 1fr;
   gap: 3rem;
   align-items: start;
+  
+  @media (max-width: 768px) {
+    grid-template-columns: 1fr;
+  }
 }
 
 .model-image-gallery {
@@ -179,152 +245,123 @@ onMounted(async () => {
 
 .model-main-image {
   width: 100%;
-  height: 400px;
-  object-fit: cover;
-  border-radius: 10px;
-  box-shadow: 0 5px 15px rgba($black, 0.1);
-}
-
-.model-info {
-  display: flex;
-  flex-direction: column;
-  gap: 2rem;
+  border-radius: 12px;
+  box-shadow: 0 5px 15px rgba(0, 0, 0, 0.1);
 }
 
 .model-header {
   display: flex;
   align-items: center;
   gap: 1.5rem;
+  margin-bottom: 2rem;
   
   .brand-logo {
-    width: 60px;
-    height: 60px;
+    width: 80px;
+    height: auto;
     object-fit: contain;
   }
-}
-
-.model-name {
-  font-size: 2.5rem;
-  margin-bottom: 0.5rem;
-  color: $black;
-}
-
-.model-brand {
-  font-size: 1.2rem;
-  color: $greyDark;
+  
+  .model-name {
+    font-size: 2.2rem;
+    margin: 0 0 0.5rem;
+  }
+  
+  .model-brand {
+    color: #666;
+    margin: 0;
+  }
 }
 
 .model-specs {
   display: grid;
   grid-template-columns: repeat(3, 1fr);
   gap: 1.5rem;
-  padding: 2rem;
-  background-color: #f8f9fa;
-  border-radius: 10px;
-}
-
-.spec-item {
-  display: flex;
-  align-items: center;
-  gap: 1rem;
+  margin-bottom: 2rem;
   
-  i {
-    font-size: 1.5rem;
-    color: $red;
+  .spec-item {
+    display: flex;
+    align-items: flex-start;
+    gap: 1rem;
+    
+    i {
+      font-size: 1.5rem;
+      color: #ff4444;
+      margin-top: 0.2rem;
+    }
+    
+    h3 {
+      font-size: 0.9rem;
+      color: #666;
+      margin: 0 0 0.3rem;
+    }
+    
+    p {
+      font-size: 1.1rem;
+      font-weight: 600;
+      margin: 0;
+    }
   }
   
+  @media (max-width: 576px) {
+    grid-template-columns: 1fr;
+  }
+}
+
+.model-description {
+  margin-bottom: 2rem;
+  
   h3 {
-    font-size: 0.9rem;
-    color: $greyDark;
-    margin-bottom: 0.25rem;
+    font-size: 1.2rem;
+    margin-bottom: 1rem;
   }
   
   p {
-    font-size: 1.1rem;
-    font-weight: 600;
-    color: $black;
+    line-height: 1.6;
+    color: #444;
   }
 }
 
 .model-actions {
   display: flex;
   gap: 1rem;
-}
-
-.action-button {
-  flex: 1;
-  padding: 1rem;
-  border-radius: 5px;
-  border: none;
-  font-weight: 600;
-  cursor: pointer;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  gap: 0.5rem;
-  transition: all 0.2s ease;
   
-  i {
-    font-size: 1.1rem;
-  }
-  
-  &--primary {
-    background-color: $red;
-    color: $white;
+  .action-button {
+    flex: 1;
+    padding: 1rem;
+    border: none;
+    border-radius: 8px;
+    font-weight: 600;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 0.5rem;
+    cursor: pointer;
+    transition: all 0.2s ease;
     
-    &:hover {
-      background-color: darken($red, 10%);
+    i {
+      font-size: 1.1rem;
+    }
+    
+    &--primary {
+      background: #ff4444;
+      color: white;
+      
+      &:hover {
+        background: #ff2222;
+      }
+    }
+    
+    &--secondary {
+      background: #f5f5f5;
+      color: #333;
+      
+      &:hover {
+        background: #e5e5e5;
+      }
     }
   }
   
-  &--secondary {
-    background-color: $white;
-    color: $black;
-    border: 2px solid $greyDark;
-    
-    &:hover {
-      background-color: $greyDark;
-      color: $white;
-    }
-  }
-}
-
-@media (max-width: 968px) {
-  .model-content {
-    grid-template-columns: 1fr;
-    gap: 2rem;
-  }
-  
-  .model-image-gallery {
-    position: static;
-  }
-  
-  .model-main-image {
-    height: 300px;
-  }
-  
-  .model-specs {
-    grid-template-columns: 1fr;
-    padding: 1.5rem;
-  }
-}
-
-@media (max-width: 480px) {
-  .model-header {
-    flex-direction: column;
-    text-align: center;
-    
-    .brand-logo {
-      width: 50px;
-      height: 50px;
-    }
-  }
-  
-  .model-name {
-    font-size: 2rem;
-  }
-  
-  .model-actions {
+  @media (max-width: 576px) {
     flex-direction: column;
   }
 }
