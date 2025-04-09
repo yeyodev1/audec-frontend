@@ -54,6 +54,7 @@ export const useCarBrandsStore = defineStore('CarBrandsStore', {
 
   actions: {
     // Fetch all brands from the API
+    // Update the fetchAllBrands action
     async fetchAllBrands() {
       this.isLoading = true
       this.errorMessage = null
@@ -63,37 +64,33 @@ export const useCarBrandsStore = defineStore('CarBrandsStore', {
         const brandsData = await brandsService.getAllBrands()
         
         // Map the API response to match our store structure
-        this.brands = brandsData.map((brand: any) => ({
-          id: brand.id,
-          name: brand.name,
-          slug: brand.slug,
-          imageUrl: brand.imageUrl,
-          country: brand.country || 'Unknown',
-          description: brand.description || '',
-          models: brand.models.map((model: any) => {
-            // Use the images array directly if it exists
-            let images = model.images || [];
-            
-            // If no images array but has imageUrl, create a single image array
-            if (images.length === 0 && model.imageUrl) {
-              images = [{
-                url: model.imageUrl,
-                alt: `${model.name} main image`
-              }];
-            }
-            
-            return {
+        this.brands = brandsData.map((brand: any) => {
+          // Process models if they exist
+          let models: CarModel[] = [];
+          
+          if (brand.models && Array.isArray(brand.models)) {
+            models = brand.models.map((model: any) => ({
               id: model.id,
               name: model.name || model.modelName,
               slug: model.slug,
-              imageUrl: model.imageUrl || '',
-              year: model.year || new Date().getFullYear(),
+              imageUrl: model.imageUrl || model.foto || '',
+              year: model.year || '',
               description: model.description || '',
-              price: Math.floor(Math.random() * 50000) + 20000,
-              images: images
-            };
-          })
-        }))
+              price: model.price || 0,
+              images: this.processModelImages(model)
+            }));
+          }
+          
+          return {
+            id: brand.id,
+            name: brand.name,
+            slug: brand.slug,
+            imageUrl: brand.imageUrl || '',
+            country: brand.country || 'Unknown',
+            description: brand.description || '',
+            models: models
+          };
+        })
         
         return this.brands
       } catch (error: any) {
@@ -103,6 +100,41 @@ export const useCarBrandsStore = defineStore('CarBrandsStore', {
       } finally {
         this.isLoading = false
       }
+    },
+
+    // Add this helper method to process model images
+    processModelImages(model: any): Array<{url: string, alt: string}> {
+      const images: Array<{url: string, alt: string}> = [];
+      
+      // Add main image if it exists
+      if (model.foto) {
+        let mainImageUrl = model.foto;
+        if (mainImageUrl.startsWith('//')) {
+          mainImageUrl = `https:${mainImageUrl}`;
+        }
+        images.push({
+          url: mainImageUrl,
+          alt: `${model.name || model.modelName} main image`
+        });
+      }
+      
+      // Add gallery images if they exist
+      if (model.fotos && Array.isArray(model.fotos)) {
+        model.fotos.forEach((foto: any) => {
+          if (foto.filename) {
+            let imageUrl = foto.filename;
+            if (imageUrl.startsWith('//')) {
+              imageUrl = `https:${imageUrl}`;
+            }
+            images.push({
+              url: imageUrl,
+              alt: foto.alt || `${model.name || model.modelName} gallery image`
+            });
+          }
+        });
+      }
+      
+      return images;
     },
 
     // Get all brands (use fetchAllBrands first)

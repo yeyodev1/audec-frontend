@@ -22,9 +22,21 @@ const currentBrand = computed(() => {
 const loadBrandModels = async () => {
   try {
     loadingMessage.value = 'Cargando modelos...';
-    brandModels.value = await carBrandsStore.getBrandModels(brandSlug.value);
+    const brandData = await carBrandsStore.getBrandBySlug(brandSlug.value);
+    
+    // Check if brandData exists and has models
+    if (brandData && brandData.models) {
+      // Filter out models that have the name "index"
+      brandModels.value = brandData.models.filter(model => 
+        model.name.toLowerCase() !== 'index'
+      );
+    } else {
+      brandModels.value = [];
+    }
+    
   } catch (error) {
     console.error('Error loading models:', error);
+    brandModels.value = [];
   }
 };
 
@@ -32,12 +44,10 @@ onMounted(async () => {
   try {
     loadingMessage.value = 'Cargando información...';
     
-    // Fetch brands data if not already loaded
     if (carBrandsStore.brands.length === 0) {
       await carBrandsStore.fetchAllBrands();
     }
     
-    // Load models for the current brand regardless of currentBrand value
     await loadBrandModels();
     
   } catch (error) {
