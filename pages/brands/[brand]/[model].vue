@@ -21,10 +21,6 @@ const currentBrand = ref(null);
 const currentImageIndex = ref(0);
 const galleryImages = ref([]);
 
-const formatPrice = (price) => {
-  if (!price) return 'Precio a consultar';
-  return `$${price.toLocaleString()}`;
-};
 
 // Gallery navigation methods
 const nextImage = () => {
@@ -68,8 +64,6 @@ onMounted(async () => {
     // Get the model by slug
     currentModel.value = currentBrand.value.models.find(model => model.slug === modelSlug.value);
 
-    console.log('currentModel: ', currentModel.value)
-    
     if (!currentModel.value) {
       console.error('Model not found:', modelSlug.value);
       await router.push(`/brands/${brandSlug.value}`);
@@ -94,6 +88,20 @@ onMounted(async () => {
     isLoading.value = false;
   }
 });
+
+// Function to format WhatsApp message
+const getWhatsAppLink = () => {
+  // Phone number (replace with your actual dealer number)
+  const phoneNumber = '593978735794'; // Format: country code + number without + or spaces
+  
+  // Create message with car details
+  const message = encodeURIComponent(
+    `Hola, estoy interesado en el auto ${currentModel.value.name} ${currentModel.value.year} de ${currentBrand.value.name}. ¿Podrían proporcionarme más información?`
+  );
+  
+  // Return WhatsApp URL
+  return `https://wa.me/${phoneNumber}?text=${message}`;
+};
 </script>
 
 <template>
@@ -180,14 +188,6 @@ onMounted(async () => {
             </div>
 
             <div class="spec-item">
-              <i class="fas fa-tag"></i>
-              <div>
-                <h3>Precio</h3>
-                <p>{{ formatPrice(currentModel.price) }}</p>
-              </div>
-            </div>
-
-            <div class="spec-item">
               <i class="fas fa-flag"></i>
               <div>
                 <h3>País de origen</h3>
@@ -202,10 +202,10 @@ onMounted(async () => {
           </div>
 
           <div class="model-actions">
-            <button class="action-button action-button--primary">
-              <i class="fas fa-phone"></i>
+            <a :href="getWhatsAppLink()" target="_blank" class="action-button action-button--primary">
+              <i class="fab fa-whatsapp"></i>
               Contactar vendedor
-            </button>
+            </a>
             <button class="action-button action-button--secondary">
               <i class="far fa-heart"></i>
               Guardar
@@ -537,6 +537,7 @@ onMounted(async () => {
     gap: 0.5rem;
     cursor: pointer;
     transition: all 0.2s ease;
+    text-decoration: none; /* Add this for the anchor tag */
     
     i {
       font-size: 1.1rem;
