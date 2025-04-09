@@ -212,6 +212,26 @@ const getWhatsAppLink = () => {
             </button>
           </div>
         </div>
+      </div> <!-- end of model-content -->
+      
+      <!-- Full Gallery Section -->
+      <div class="full-gallery">
+        <h2 class="gallery-title">Galería completa</h2>
+        <div class="gallery-grid">
+          <div 
+            v-for="(image, index) in galleryImages" 
+            :key="index"
+            class="gallery-item"
+            @click="selectImage(index)"
+          >
+            <div class="image-wrapper">
+              <img :src="image.url" :alt="image.alt">
+              <div class="image-overlay">
+                <span class="image-number">{{ index + 1 }}</span>
+              </div>
+            </div>
+          </div>
+        </div>
       </div>
     </div>
 
@@ -564,6 +584,96 @@ const getWhatsAppLink = () => {
   
   @media (max-width: 576px) {
     flex-direction: column;
+  }
+}
+
+.full-gallery {
+  margin-top: 4rem;
+  padding-top: 3rem;
+  border-top: 1px solid #eee;
+}
+
+.gallery-title {
+  font-size: 2rem;
+  font-weight: 600;
+  color: #333;
+  margin-bottom: 2rem;
+  text-align: center;
+  
+  &::after {
+    content: '';
+    display: block;
+    width: 60px;
+    height: 3px;
+    background: #ff4444;
+    margin: 1rem auto 0;
+  }
+}
+
+.gallery-grid {
+  display: grid;
+  grid-template-columns: repeat(4, 1fr);
+  gap: 1rem;
+  
+  @media (max-width: 1200px) {
+    grid-template-columns: repeat(3, 1fr);
+  }
+  
+  @media (max-width: 768px) {
+    grid-template-columns: repeat(2, 1fr);
+  }
+}
+
+.gallery-item {
+  cursor: pointer;
+  
+  .image-wrapper {
+    position: relative;
+    aspect-ratio: 1;
+    overflow: hidden;
+    border-radius: 8px;
+    box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
+    
+    img {
+      width: 100%;
+      height: 100%;
+      object-fit: cover;
+      transition: transform 0.4s ease;
+    }
+    
+    .image-overlay {
+      position: absolute;
+      inset: 0;
+      background: linear-gradient(to top, rgba(0,0,0,0.4), transparent);
+      opacity: 0;
+      transition: opacity 0.3s ease;
+      display: flex;
+      align-items: flex-end;
+      justify-content: flex-end;
+      padding: 1rem;
+    }
+    
+    .image-number {
+      color: white;
+      font-size: 0.9rem;
+      font-weight: 500;
+      background: rgba(0,0,0,0.5);
+      padding: 0.3rem 0.8rem;
+      border-radius: 20px;
+      backdrop-filter: blur(4px);
+    }
+  }
+  
+  &:hover {
+    .image-wrapper {
+      img {
+        transform: scale(1.05);
+      }
+      
+      .image-overlay {
+        opacity: 1;
+      }
+    }
   }
 }
 </style>
