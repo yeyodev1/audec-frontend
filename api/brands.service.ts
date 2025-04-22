@@ -87,6 +87,8 @@ export default class BrandsService {
               imageUrl: modelPhotoUrl,
               year: modelStory.content.year || '',
               description: modelStory.content.description || '',
+              // Include PDF URL in the model data
+              pdf: modelStory.content.pdf?.url || modelStory.content.pdf?.cached_url || '',
               fotos: modelStory.content.fotos || [], // Include raw fotos data
               images: galleryImages // Include processed gallery images
             };
@@ -116,7 +118,6 @@ export default class BrandsService {
   }
 
   async getBrandDetails(brandSlug: string) {
-    console.log('brandSlug', brandSlug)
     try {
       const response = await Storyblok.get('cdn/stories', {
         token: '9gpCqqe772O7QL2swgQeXQtt',

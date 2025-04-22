@@ -201,6 +201,16 @@ const getWhatsAppLink = () => {
             <p>{{ currentModel.description }}</p>
           </div>
 
+          <!-- Technical Sheet Section -->
+          <div class="model-technical-sheet" v-if="currentModel.pdf">
+            <h3>Ficha Técnica</h3>
+            <a :href="currentModel.pdf" target="_blank" class="technical-sheet-link">
+              <i class="fas fa-file-pdf"></i>
+              <span>Descargar ficha técnica</span>
+              <i class="fas fa-download"></i>
+            </a>
+          </div>
+
           <div class="model-actions">
             <a :href="getWhatsAppLink()" target="_blank" class="action-button action-button--primary">
               <i class="fab fa-whatsapp"></i>
@@ -673,6 +683,50 @@ const getWhatsAppLink = () => {
       .image-overlay {
         opacity: 1;
       }
+    }
+  }
+}
+.model-technical-sheet {
+  margin-bottom: 2rem;
+  padding: 1.5rem;
+  background: #f8f8f8;
+  border-radius: 8px;
+  
+  h3 {
+    font-size: 1.2rem;
+    margin-bottom: 1rem;
+  }
+  
+  .technical-sheet-link {
+    display: flex;
+    align-items: center;
+    gap: 1rem;
+    padding: 1rem;
+    background: white;
+    border: 1px solid #eee;
+    border-radius: 6px;
+    color: #ff4444;
+    text-decoration: none;
+    transition: all 0.2s ease;
+    
+    i {
+      font-size: 1.2rem;
+      
+      &:first-child {
+        font-size: 1.5rem;
+      }
+    }
+    
+    span {
+      flex: 1;
+      font-weight: 600;
+    }
+    
+    &:hover {
+      background: #fff5f5;
+      border-color: #ffdddd;
+      transform: translateY(-2px);
+      box-shadow: 0 4px 12px rgba(255, 68, 68, 0.1);
     }
   }
 }

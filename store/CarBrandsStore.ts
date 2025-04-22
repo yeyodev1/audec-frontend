@@ -10,6 +10,8 @@ interface CarModel {
   year: string | number
   description?: string
   price?: number
+  // Add PDF link field
+  pdf?: string
   // Add images array for gallery
   images?: Array<{
     url: string
@@ -77,10 +79,13 @@ export const useCarBrandsStore = defineStore('CarBrandsStore', {
               year: model.year || '',
               description: model.description || '',
               price: model.price || 0,
+              // Correctly extract the PDF URL from the model
+              pdf: model.pdf || '',
               images: this.processModelImages(model)
             }));
           }
           
+
           return {
             id: brand.id,
             name: brand.name,
